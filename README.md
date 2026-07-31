@@ -1,55 +1,70 @@
 # Climatic 🌤️
 
-Aplicação web que monta um relatório climático de qualquer município brasileiro e permite exportá-lo em PDF.
+Relatório climático de qualquer município brasileiro: previsão hora a hora, qualidade do ar por poluente e exportação em PDF.
 
-## Como funciona
+Reconstrução do [Climatic original](https://github.com/ElssoM/Climatic) em Next.js, com a chave da API protegida no servidor.
 
-1. Selecione o **estado** — a lista vem da API de localidades do IBGE
-2. Selecione a **cidade** — carregada dinamicamente conforme o estado escolhido
-3. O app busca a previsão do dia na **WeatherAPI** e monta a tabela hora a hora
-4. Clique em salvar para exportar o relatório em PDF
+## Por que a reconstrução
 
-## O que o relatório mostra
+A versão estática funcionava, mas tinha limites que não davam para resolver sem backend:
 
-Para cada hora do dia: condição do tempo, probabilidade de chuva, temperatura, sensação térmica, umidade e velocidade do vento — além da qualidade do ar do município.
-
-## Tecnologias
-
-`JavaScript` · `HTML` · `CSS` · [jsPDF](https://github.com/parallax/jsPDF)
-
-## APIs utilizadas
-
-| API | Uso |
+| Problema | Como está agora |
 | :--- | :--- |
-| [IBGE Localidades](https://servicodados.ibge.gov.br/api/docs/localidades) | Lista de estados e municípios |
-| [WeatherAPI](https://www.weatherapi.com/) | Previsão do tempo e qualidade do ar |
+| Chave da WeatherAPI ia no JavaScript e aparecia no DevTools de qualquer visitante | A consulta acontece em `/api/previsao`, no servidor. A chave nunca é enviada ao navegador |
+| Índice DEFRA tratado como binário — poluição alta exibida como "Moderada" | Quatro faixas oficiais: Baixa (1-3), Moderada (4-6), Alta (7-9), Muito alta (10) |
+| PDF rasterizado pelo html2pdf: ~3 MB, sem um caractere selecionável | jsPDF + autoTable, com texto pesquisável e copiável em ~44 KB |
+| 27 requisições ao IBGE a cada visita | Rota com cache de 24h para localidades e 10 min para a previsão |
 
-## Como rodar
+## Stack
+
+`Next.js 15` · `React 19` · `TypeScript` · `Tailwind CSS 4` · `GSAP` · `Lenis` · `Framer Motion` · `React Three Fiber` + `Drei` · `jsPDF`
+
+## Configuração
 
 ```bash
-git clone https://github.com/ElssoM/Climatic.git
+npm install
+cp .env.example .env.local
 ```
 
-Abra o `index.html` no navegador. Não há dependências nem etapa de build.
+Preencha `WEATHER_API_KEY` no `.env.local` com sua chave gratuita da [WeatherAPI](https://www.weatherapi.com/signup.aspx).
 
-### Configurando a chave da WeatherAPI
+> A variável **não** tem o prefixo `NEXT_PUBLIC_`. Isso é proposital: sem o prefixo, o Next mantém o valor apenas no servidor e ele nunca entra no bundle do cliente. `.env.local` está no `.gitignore`.
 
-O app precisa de uma chave gratuita da [WeatherAPI](https://www.weatherapi.com/signup.aspx). Há duas formas de informá-la:
+```bash
+npm run dev
+```
 
-**Pela interface** — abra o app e cole a chave no campo que aparece. Ela fica salva apenas no seu navegador (`localStorage`), o que evita mexer em arquivos e funciona bem quando várias pessoas usam a mesma cópia do projeto.
+## Rotas de API
 
-**Por arquivo** — copie `config.example.js` para `config.js` e preencha `window.WEATHER_API_KEY`. Útil para deixar a chave fixa em uma máquina de desenvolvimento. O `config.js` está no `.gitignore` e não deve ser commitado.
+| Rota | O que faz | Cache |
+| :--- | :--- | :--- |
+| `GET /api/localidades` | Lista os 27 estados (IBGE) | 24h |
+| `GET /api/localidades?uf=SP` | Lista os municípios do estado (IBGE) | 24h |
+| `GET /api/previsao?cidade=&estado=` | Previsão e qualidade do ar (WeatherAPI) | 10 min |
+| `GET /api/mundo` | Temperatura atual de 8 capitais (WeatherAPI) | 10 min |
 
-Quando as duas existem, o `config.js` tem precedência. Se a WeatherAPI recusar a chave (HTTP 401 ou 403), o app descarta a que estava salva no navegador e pede outra.
+O `/api/mundo` dispara as 8 consultas em paralelo com `Promise.allSettled`: uma capital que falhe sai do painel sem derrubar as outras. O cache faz as 8 chamadas valerem por janela de 10 minutos, não por visitante.
 
-> ⚠️ Por ser um site estático, a chave fica visível no navegador de quem acessa. Isso é aceitável para uso local ou pessoal — mas se o app for publicado, a chave precisa sair do front-end e ficar atrás de um proxy no servidor.
+## Tipografia
 
-## Contribuindo
+| Uso | Fonte | Por quê |
+| :--- | :--- | :--- |
+| Títulos | **Sora** 600/700 | Geométrica, com personalidade nos tamanhos grandes |
+| Texto | **Inter** | Desenhada para leitura em tela, ótima em corpo pequeno |
+| Números | **JetBrains Mono** 400/500 | Largura fixa mantém as colunas da tabela alinhadas |
 
-Pull requests são bem-vindos! Abra uma issue ou PR descrevendo a melhoria.
+Tabelas e valores usam `font-variant-numeric: tabular-nums` e `font-feature-settings: "zero" 1`, que ativa o zero cortado — em dado numérico, `0` não pode ser confundido com `O`.
 
-Fork → branch → PR para `main`.
+## Desempenho e acessibilidade
 
-## Exemplo
+A cena 3D do topo é carregada sob demanda (`next/dynamic` com `ssr: false`) e só entra quando o aparelho comporta: tela de 1024px ou mais, pelo menos 4 GB de memória e 4 núcleos. Fora disso — celular, aparelho modesto, ou quem ativou *prefers-reduced-motion* — a página serve um gradiente com o mesmo clima visual, e o chunk do `three` sequer é baixado.
 
-O arquivo `Relatorio_Climatico quatis 07112024.pdf` é uma amostra da saída gerada pelo app.
+A rolagem suave do Lenis e as animações de GSAP e Framer Motion também respeitam `prefers-reduced-motion`.
+
+## Scripts
+
+```bash
+npm run dev        # desenvolvimento com Turbopack
+npm run build      # build de produção
+npm run lint       # ESLint
+```
