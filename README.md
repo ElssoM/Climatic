@@ -32,10 +32,17 @@ git clone https://github.com/ElssoM/Climatic.git
 
 Abra o `index.html` no navegador. Não há dependências nem etapa de build.
 
-1. Copie `config.example.js` para `config.js`
-2. Informe sua chave gratuita da [WeatherAPI](https://www.weatherapi.com/) em `window.WEATHER_API_KEY`
+### Configurando a chave da WeatherAPI
 
-> **Nota:** `config.js` não deve ser commitado (já está no `.gitignore`).
+O app precisa de uma chave gratuita da [WeatherAPI](https://www.weatherapi.com/signup.aspx). Há duas formas de informá-la:
+
+**Pela interface** — abra o app e cole a chave no campo que aparece. Ela fica salva apenas no seu navegador (`localStorage`), o que evita mexer em arquivos e funciona bem quando várias pessoas usam a mesma cópia do projeto.
+
+**Por arquivo** — copie `config.example.js` para `config.js` e preencha `window.WEATHER_API_KEY`. Útil para deixar a chave fixa em uma máquina de desenvolvimento. O `config.js` está no `.gitignore` e não deve ser commitado.
+
+Quando as duas existem, o `config.js` tem precedência. Se a WeatherAPI recusar a chave (HTTP 401 ou 403), o app descarta a que estava salva no navegador e pede outra.
+
+> ⚠️ Por ser um site estático, a chave fica visível no navegador de quem acessa. Isso é aceitável para uso local ou pessoal — mas se o app for publicado, a chave precisa sair do front-end e ficar atrás de um proxy no servidor.
 
 ## Contribuindo
 
