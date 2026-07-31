@@ -3,56 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Relatório climático hora a hora de qualquer município brasileiro, com qualidade do ar e exportação em PDF.">
     <title>Relatório Climático</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 </head>
 <body>
 
     <div class="container">
-        <h1>RELATÓRIO CLIMA</h1>
-        
-        <div class="controls">
-            <label>Estado:</label>
-            <select id="estado" onchange="carregarCidades()"></select>
 
-            <label>Cidade:</label>
-            <select id="cidade" onchange="atualizarDados()"></select>
-
-            <label>Período de Coleta:</label>
-            <input type="text" id="periodoColeta" readonly>
-            
-            <button type="button" id="btnSalvar" onclick="salvarPDF(document.body, 'Relatorio_Climatico')">SALVAR</button>
-        </div>
-
-        <div id="qualidadeAr" class="qualidade-ar">
-            <h3>Qualidade do Ar: <span id="indiceAr">Boa</span></h3>
-            <div id="poluentes">
-                
+        <header class="cabecalho">
+            <div>
+                <h1>Relatório Climático</h1>
+                <p class="subtitulo">Previsão hora a hora e qualidade do ar por município</p>
             </div>
+            <button type="button" id="btnTema" class="btn-tema" aria-label="Alternar tema claro e escuro" title="Alternar tema">
+                <span aria-hidden="true">◐</span>
+            </button>
+        </header>
+
+        <form class="controles" id="formConsulta" autocomplete="off">
+            <div class="campo">
+                <label for="estado">Estado</label>
+                <select id="estado" name="estado"></select>
+            </div>
+
+            <div class="campo">
+                <label for="cidade">Cidade</label>
+                <select id="cidade" name="cidade"></select>
+            </div>
+
+            <div class="campo">
+                <label for="periodoColeta">Período de coleta</label>
+                <input type="text" id="periodoColeta" name="periodoColeta" readonly>
+            </div>
+
+            <button type="button" id="btnSalvar" class="btn-salvar" disabled>
+                Salvar PDF
+            </button>
+        </form>
+
+        <p id="infoColeta" class="info" role="status" aria-live="polite"></p>
+
+        <section class="resumo" id="resumo" hidden>
+            <article class="card" id="cardTemperatura">
+                <span class="card-rotulo">Temperatura atual</span>
+                <strong class="card-valor" id="tempAtual">—</strong>
+                <span class="card-detalhe" id="sensacaoAtual"></span>
+            </article>
+
+            <article class="card" id="cardCondicao">
+                <span class="card-rotulo">Condição</span>
+                <strong class="card-valor card-valor-texto" id="condicaoAtual">—</strong>
+                <span class="card-detalhe" id="ventoAtual"></span>
+            </article>
+
+            <article class="card" id="cardAr">
+                <span class="card-rotulo">Qualidade do ar</span>
+                <strong class="card-valor card-valor-texto">
+                    <span class="selo" id="indiceAr">—</span>
+                </strong>
+                <span class="card-detalhe" id="indiceArDetalhe"></span>
+            </article>
+        </section>
+
+        <section class="poluentes-secao" id="poluentesSecao" hidden>
+            <h2>Poluentes</h2>
+            <ul class="poluentes" id="poluentes"></ul>
+            <p class="nota">Concentrações em µg/m³.</p>
+        </section>
+
+        <div class="tabela-wrap">
+            <table id="tabelaPrevisao">
+                <caption class="sr-only">Previsão hora a hora para o município selecionado</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Horário</th>
+                        <th scope="col">Condição</th>
+                        <th scope="col">Chuva</th>
+                        <th scope="col">Temperatura</th>
+                        <th scope="col">Sensação</th>
+                        <th scope="col">Umidade</th>
+                        <th scope="col">Vento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="linha-vazia">
+                        <td colspan="7">Selecione um estado e um município para carregar a previsão.</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-        <p id="infoColeta"></p>
+        <footer class="rodape">
+            Dados de <a href="https://servicodados.ibge.gov.br/api/docs/localidades" target="_blank" rel="noopener">IBGE</a>
+            e <a href="https://www.weatherapi.com/" target="_blank" rel="noopener">WeatherAPI</a>.
+        </footer>
 
-        <table id="tabelaPrevisao">
-            <thead>
-                <tr>
-                    <th>Horário</th>
-                    <th>Condição</th>
-                    <th>Chuva (%)</th>
-                    <th>Temperatura (°C)</th>
-                    <th>Sensação (°C)</th>
-                    <th>Umidade (%)</th>
-                    <th>Vento (Kph)</th>
-                </tr>
-            </thead>
-            <tbody>
-           
-            </tbody>
-        </table>
     </div>
 
-    <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="config.js" onerror="window.CONFIG_AUSENTE = true"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
