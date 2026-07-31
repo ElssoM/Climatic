@@ -18,9 +18,12 @@
                 <h1>Relatório Climático</h1>
                 <p class="subtitulo">Previsão hora a hora e qualidade do ar por município</p>
             </div>
-            <button type="button" id="btnTema" class="btn-tema" aria-label="Alternar tema claro e escuro" title="Alternar tema">
-                <span aria-hidden="true">◐</span>
-            </button>
+            <div class="acoes-cabecalho">
+                <button type="button" id="btnTrocarChave" class="btn-secundario" hidden>Trocar chave</button>
+                <button type="button" id="btnTema" class="btn-tema" aria-label="Alternar tema claro e escuro" title="Alternar tema">
+                    <span aria-hidden="true">◐</span>
+                </button>
+            </div>
         </header>
 
         <form class="controles" id="formConsulta" autocomplete="off">
@@ -43,6 +46,20 @@
                 Salvar PDF
             </button>
         </form>
+
+        <section class="chave-secao" id="chaveSecao" hidden>
+            <h2>Configurar acesso à WeatherAPI</h2>
+            <p class="chave-texto">
+                Este app precisa de uma chave da WeatherAPI para buscar a previsão.
+                Crie uma gratuita em <a href="https://www.weatherapi.com/signup.aspx" target="_blank" rel="noopener">weatherapi.com</a>
+                e cole abaixo. Ela fica salva apenas neste navegador e não é enviada a lugar nenhum além da própria WeatherAPI.
+            </p>
+            <form class="chave-form" id="chaveForm">
+                <label for="chaveInput" class="sr-only">Chave da WeatherAPI</label>
+                <input type="password" id="chaveInput" name="chaveInput" placeholder="Cole sua chave aqui" autocomplete="off" spellcheck="false" required>
+                <button type="submit" class="btn-salvar">Salvar chave</button>
+            </form>
+        </section>
 
         <p id="infoColeta" class="info" role="status" aria-live="polite"></p>
 

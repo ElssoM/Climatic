@@ -34,7 +34,10 @@ document.addEventListener("DOMContentLoaded", () => {
     el("btnSalvar").addEventListener("click", salvarPDF);
     el("btnTema").addEventListener("click", alternarTema);
     el("formConsulta").addEventListener("submit", (e) => e.preventDefault());
+    el("chaveForm").addEventListener("submit", salvarChave);
+    el("btnTrocarChave").addEventListener("click", pedirChave);
 
+    esconderPedidoDeChave();
     carregarEstados();
 });
 
@@ -71,9 +74,42 @@ function linhaMensagem(texto, classe) {
     tbody.innerHTML = `<tr class="${classe}"><td colspan="7">${texto}</td></tr>`;
 }
 
+/* ------------------------------------------------------- chave da API */
+
+const CHAVE_STORAGE = "climatic:chave";
+
+/* Ordem de precedência: config.js (quando presente) e, se não houver,
+   a chave que a própria pessoa informou na interface. */
 function obterChaveApi() {
-    const chave = window.WEATHER_API_KEY;
-    return chave && chave !== "SUA_CHAVE_AQUI" ? chave : null;
+    const doArquivo = window.WEATHER_API_KEY;
+    if (doArquivo && doArquivo !== "SUA_CHAVE_AQUI") return doArquivo;
+
+    const doNavegador = localStorage.getItem(CHAVE_STORAGE);
+    return doNavegador ? doNavegador : null;
+}
+
+function pedirChave() {
+    el("chaveSecao").hidden = false;
+    el("btnTrocarChave").hidden = true;
+    el("chaveInput").value = "";
+    el("chaveInput").focus();
+}
+
+function esconderPedidoDeChave() {
+    el("chaveSecao").hidden = true;
+    el("btnTrocarChave").hidden = !localStorage.getItem(CHAVE_STORAGE);
+}
+
+function salvarChave(evento) {
+    evento.preventDefault();
+    const chave = el("chaveInput").value.trim();
+    if (!chave) return;
+
+    localStorage.setItem(CHAVE_STORAGE, chave);
+    el("chaveInput").value = "";
+    esconderPedidoDeChave();
+    mostrarInfo("Chave salva neste navegador.");
+    atualizarDados();
 }
 
 /* ------------------------------------------------------------- IBGE */
@@ -133,8 +169,9 @@ async function atualizarDados() {
     if (!cidade) return;
 
     if (!apiKey) {
-        mostrarInfo("Configure sua chave da WeatherAPI em config.js (veja config.example.js).", true);
-        linhaMensagem("Sem chave da API configurada.", "linha-vazia");
+        pedirChave();
+        mostrarInfo("Informe sua chave da WeatherAPI para carregar a previsão.");
+        linhaMensagem("Aguardando a chave da API.", "linha-vazia");
         return;
     }
 
@@ -152,10 +189,19 @@ async function atualizarDados() {
         const response = await fetch(url);
         if (!response.ok) {
             const detalhe = await response.json().catch(() => null);
+
+            /* 401/403 significam chave invalida ou sem cota: descarta a chave
+               guardada no navegador e pede outra, em vez de repetir o erro. */
+            if ((response.status === 401 || response.status === 403) && localStorage.getItem(CHAVE_STORAGE)) {
+                localStorage.removeItem(CHAVE_STORAGE);
+                pedirChave();
+            }
+
             throw new Error(detalhe?.error?.message || "Não foi possível obter a previsão para este município.");
         }
 
         const dados = await response.json();
+        esconderPedidoDeChave();
         renderizar(dados, cidade, estado);
     } catch (error) {
         ultimoRelatorio = null;
