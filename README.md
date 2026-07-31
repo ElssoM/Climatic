@@ -32,7 +32,16 @@ git clone https://github.com/ElssoM/Climatic.git
 
 Abra o `index.html` no navegador. Não há dependências nem etapa de build.
 
-> **Nota:** para usar o projeto você precisa da sua própria chave da WeatherAPI, obtida gratuitamente em [weatherapi.com](https://www.weatherapi.com/), e informá-la no `script.js`.
+1. Copie `config.example.js` para `config.js`
+2. Informe sua chave gratuita da [WeatherAPI](https://www.weatherapi.com/) em `window.WEATHER_API_KEY`
+
+> **Nota:** `config.js` não deve ser commitado (já está no `.gitignore`).
+
+## Contribuindo
+
+Pull requests são bem-vindos! Abra uma issue ou PR descrevendo a melhoria.
+
+Fork → branch → PR para `main`.
 
 ## Exemplo
 

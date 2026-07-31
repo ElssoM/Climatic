@@ -1,0 +1,13 @@
+# Dependências locais (não versionar chaves)
+config.js
+.env
+.env.*
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
